@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme { --color-forest: #175c3a; --color-leaf: #2c8c59; --color-cream: #f7f8f2; --color-ink: #183026; }
+@layer base {
+  * { box-sizing: border-box; }
+  body { @apply bg-cream text-ink antialiased; }
+  a { @apply transition-colors; }
+  input, select, textarea { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/20; }
+  button { @apply cursor-pointer; }
+}
+@layer components {
+  .shell { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
+  .card { @apply rounded-2xl border border-slate-200 bg-white shadow-sm; }
+  .button { @apply inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2 font-semibold transition focus:outline-none focus:ring-2 focus:ring-leaf focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60; }
+  .button-primary { @apply inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl bg-forest px-4 py-2 font-semibold text-white transition hover:bg-leaf focus:outline-none focus:ring-2 focus:ring-leaf focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60; }
+  .button-secondary { @apply inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-forest bg-white px-4 py-2 font-semibold text-forest transition hover:bg-forest/5 focus:outline-none focus:ring-2 focus:ring-leaf focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60; }
+  .field-label { @apply mb-1.5 block text-sm font-semibold text-slate-700; }
+}

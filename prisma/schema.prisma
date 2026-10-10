@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  FARMER
+  BUSINESS
+}
+
+enum ProductCategory {
+  vegetables
+  fruits
+  dairy
+  meat
+  grains
+  mushrooms
+  other
+}
+
+enum Unit {
+  KG
+  TON
+  PIECE
+  LITER
+}
+
+enum ProductStatus {
+  ACTIVE
+  SOLD_OUT
+  HIDDEN
+}
+
+enum InquiryStatus {
+  OPEN
+  ACCEPTED
+  DECLINED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  phone        String    @unique
+  pinHash      String
+  role         Role
+  city         String
+  businessName String?
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+  products     Product[] @relation("FarmerProducts")
+  inquiries    Inquiry[] @relation("BusinessInquiries")
+  loginAttempts LoginAttempt[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  phone       String
+  ipHash      String
+  failures    Int      @default(0)
+  lockedUntil DateTime?
+  updatedAt   DateTime @updatedAt
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([phone, ipHash])
+  @@index([lockedUntil])
+}
+
+model Product {
+  id                  String          @id @default(cuid())
+  farmerId            String
+  name                String
+  description         String
+  category            ProductCategory
+  unit                Unit
+  quantityAvailable   Decimal         @db.Decimal(12, 2)
+  pricePerUnit        Decimal         @db.Decimal(12, 2)
+  minOrderQuantity    Decimal?        @db.Decimal(12, 2)
+  city                String
+  harvestDate         DateTime        @db.Date
+  imageUrls           String[]
+  status              ProductStatus   @default(ACTIVE)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  farmer              User            @relation("FarmerProducts", fields: [farmerId], references: [id], onDelete: Cascade)
+  inquiries           Inquiry[]
+
+  @@index([status, createdAt])
+  @@index([city, status, createdAt])
+  @@index([category, status, createdAt])
+  @@index([farmerId, createdAt])
+}
+
+model Inquiry {
+  id         String        @id @default(cuid())
+  productId  String
+  businessId String
+  quantity   Decimal       @db.Decimal(12, 2)
+  message    String?
+  status     InquiryStatus @default(OPEN)
+  createdAt  DateTime      @default(now())
+  product    Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  business   User          @relation("BusinessInquiries", fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, createdAt])
+  @@index([productId, createdAt])
+  @@index([status, createdAt])
+}
