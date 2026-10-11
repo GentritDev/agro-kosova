@@ -18,15 +18,32 @@ const values = (formData: FormData) => ({ name: String(formData.get("name") ?? "
 export async function registerAction(_: ActionResult<{ redirectTo: string }> | null, formData: FormData): Promise<ActionResult<{ redirectTo: string }>> {
   const parsed = registerSchema.safeParse(values(formData));
   if (!parsed.success) return validationResult(parsed.error);
+  const { name, phone, pin, role, city, businessName } = parsed.data;
   try {
-    const user = await prisma.user.create({ data: { ...parsed.data, pinHash: await hashPin(parsed.data.pin), businessName: parsed.data.role === "BUSINESS" ? parsed.data.businessName : null } });
+    const user = await prisma.user.create({
+      data: {
+        name,
+        phone,
+        role,
+        city,
+        pinHash: await hashPin(pin),
+        businessName: role === "BUSINESS" ? (businessName ?? null) : null,
+      },
+    });
     await createSession(user.id);
     return { ok: true, data: { redirectTo: user.role === "FARMER" ? "/fermeri" : "/kerkesat" } };
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return { ok: false, code: "CONFLICT", message: "Ky numër telefoni është tashmë i regjistruar." };
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { ok: false, code: "CONFLICT", message: "Ky numër telefoni është tashmë i regjistruar." };
+    }
+    console.error("registerAction failed", {
+      name: error instanceof Error ? error.name : "unknown",
+      code: error instanceof Prisma.PrismaClientKnownRequestError ? error.code : undefined,
+    });
     return { ok: false, code: "INTERNAL", message: "Regjistrimi nuk u krye. Provoni përsëri." };
   }
 }
+
 
 export async function loginAction(_: ActionResult<{ redirectTo: string }> | null, formData: FormData): Promise<ActionResult<{ redirectTo: string }>> {
   const parsed = loginSchema.safeParse({ phone: formData.get("phone"), pin: formData.get("pin") });
